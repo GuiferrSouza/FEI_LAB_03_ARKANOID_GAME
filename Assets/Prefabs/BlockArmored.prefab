@@ -4907,7 +4907,7 @@ GameObject:
   - component: {fileID: 494238219783947546}
   - component: {fileID: 5048922497329421256}
   m_Layer: 0
-  m_Name: ArmoredBlock
+  m_Name: BlockArmored
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

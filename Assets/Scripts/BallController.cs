@@ -2,39 +2,20 @@ using UnityEngine;
 
 public class BallController : MonoBehaviour
 {
-    [Header("Movement")]
-    public float speed = 8f;
-    public float minHorizontalDirection = 0.25f;
-    public float minVerticalDirection = 0.25f;
-
-    private Rigidbody2D rb;
-    private float lastHorizontalDirection = 1f;
-
-    [Header("Lose Zone")]
-    public BoxCollider2D loseZone;
-
-    [Header("GameController")]
-    public GameController gameController;
-
-    //----------------------------------------------------------------------------------------
-
-    #region RESET
-    private Vector2 initialPosition;
-
-    //----------------------------------------------------------------------------------------
-
-    public void Reset()
-    {
-        rb.linearVelocity = Vector2.zero;
-        rb.angularVelocity = 0f;
-        rb.position = initialPosition;
-    }
-
-    #endregion RESET
+    private AudioSource audioSource;
 
     //----------------------------------------------------------------------------------------
 
     #region MOVEMENT
+
+    [Header("Movement")]
+    private Rigidbody2D rb;
+    public float speed = 8f;
+    public float minHorizontalDirection = 0.25f;
+    public float minVerticalDirection = 0.25f;
+    private float lastHorizontalDirection = 1f;
+
+    //----------------------------------------------------------------------------------------
 
     public void Launch()
     {
@@ -70,7 +51,55 @@ public class BallController : MonoBehaviour
         rb.linearVelocity = direction.normalized * speed;
     }
 
+    private void UpdateHorizontalDirection(Collision2D collision)
+    {
+        var normal = collision.GetContact(0).normal;
+        // Prevents the ball from getting stuck vertically near side walls.
+        if (Mathf.Abs(normal.x) > 0.5f) lastHorizontalDirection = Mathf.Sign(normal.x);
+    }
+
     #endregion MOVEMENT
+
+    //----------------------------------------------------------------------------------------
+
+    #region STOP/RESET
+    private Vector2 initialPosition;
+
+    //----------------------------------------------------------------------------------------
+
+    public void Stop()
+    {
+        rb.linearVelocity = Vector2.zero;
+        rb.angularVelocity = 0f;
+    }
+
+    public void Reset()
+    {
+        Stop();
+        rb.position = initialPosition;
+    }
+
+    #endregion STOP/RESET
+
+    //----------------------------------------------------------------------------------------
+
+    #region EXPLODE
+
+    [Header("Explode")]
+    public ParticleSystem explodeEffect;
+    public AudioClip explodeSound;
+    public BoxCollider2D loseZone;
+
+    //----------------------------------------------------------------------------------------
+
+    public void Explode()
+    {
+        Stop();
+        explodeEffect.Play();
+        audioSource.PlayOneShot(explodeSound);
+    }
+
+    #endregion EXPLODE
 
     //----------------------------------------------------------------------------------------
 
@@ -79,24 +108,16 @@ public class BallController : MonoBehaviour
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
+        audioSource = GetComponent<AudioSource>();
         initialPosition = rb.position;
     }
 
-    private void FixedUpdate()
-    {
-        NormalizeVelocity();
-    }
+    private void FixedUpdate() => NormalizeVelocity();
 
     private void OnCollisionEnter2D(Collision2D collision)
     {
-        if (collision.collider == loseZone) gameController.Defeat();
-        if (collision.contactCount > 0)
-        {
-            var normal = collision.GetContact(0).normal;
-            // Prevents the ball from getting stuck vertically near side walls.
-            if (Mathf.Abs(normal.x) > 0.5f) lastHorizontalDirection = Mathf.Sign(normal.x);
-        }
-
+        if (collision.collider == loseZone) Explode();
+        if (collision.contactCount > 0) UpdateHorizontalDirection(collision);
         NormalizeVelocity();
     }
 
