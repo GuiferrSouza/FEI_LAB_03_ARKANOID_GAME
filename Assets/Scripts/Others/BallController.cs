@@ -2,7 +2,7 @@ using UnityEngine;
 
 public class BallController : MonoBehaviour
 {
-    private AudioSource audioSource;
+    private SpriteRenderer spriteRenderer;
 
     //----------------------------------------------------------------------------------------
 
@@ -95,8 +95,9 @@ public class BallController : MonoBehaviour
     public void Explode()
     {
         Stop();
+        spriteRenderer.enabled = false;
         explodeEffect.Play();
-        audioSource.PlayOneShot(explodeSound);
+        GameController.PlaySound(explodeSound);
     }
 
     #endregion EXPLODE
@@ -108,7 +109,7 @@ public class BallController : MonoBehaviour
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
-        audioSource = GetComponent<AudioSource>();
+        spriteRenderer = GetComponent<SpriteRenderer>();
         initialPosition = rb.position;
     }
 

@@ -1,6 +1,7 @@
 using System;
-using System.IO;
+using System.Collections;
 using TMPro;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
@@ -15,25 +16,59 @@ public class GameController : MonoBehaviour
 
     //----------------------------------------------------------------------------------------
 
+    #region HELPERS
+
+    private void Wait(float seconds, Action action) => StartCoroutine(WaitCoroutine(seconds, action));
+    private IEnumerator WaitCoroutine(float seconds, Action action)
+    {
+        yield return new WaitForSeconds(seconds);
+        action?.Invoke();
+    }
+
+    #endregion HELPERS
+
+    //----------------------------------------------------------------------------------------
+
+    #region AUDIO
+
+    public static AudioSource audioSource;
+
+    //----------------------------------------------------------------------------------------
+
+    public static void PlaySound(AudioClip clip, float volume = 1f)
+    {
+        if (clip == null) return;
+        audioSource.PlayOneShot(clip, volume);
+    }
+
+    #endregion AUDIO
+
+    //----------------------------------------------------------------------------------------
+
     #region SCORE
 
     [Header("Score")]
-    public TMP_Text highScoreText;
     public TMP_Text scoreText;
+    public int maxScore = 999;
     private int score;
 
     //----------------------------------------------------------------------------------------
 
     public void AddScore(int points)
     {
-        score += points;
+        score = Mathf.Min(score + points, maxScore);
         scoreText.SetText(score.ToString());
     }
 
-    private void UpdateHighScore()
+    public int UpdateHighScore()
     {
-        if (HighScoreManager.TrySave(score)) highScoreText.SetText("NEW HIGH SCORE");
-        else highScoreText.SetText($"HIGH SCORE: {HighScoreManager.Load()}");
+        var hightScore = HighScoreManager.Load();
+        if (hightScore < score)
+        {
+            HighScoreManager.TrySave(score);
+            return score;
+        }
+        return hightScore;
     }
 
     #endregion SCORE
@@ -44,7 +79,6 @@ public class GameController : MonoBehaviour
 
     [Header("Start")]
     public TMP_Text startText;
-
     private bool waitingToStart;
 
     //----------------------------------------------------------------------------------------
@@ -75,19 +109,32 @@ public class GameController : MonoBehaviour
         paddle.Reset();
     }
 
-    public void RestartGame() => SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+    #endregion START/STOP
 
-    public void ExitGame() => SceneManager.LoadScene("Menu");
+    //----------------------------------------------------------------------------------------
 
-    public void Defeat()
+    #region OVER/WIN
+
+    [Header("Game Over/Win")]
+    public SceneAsset gameOverScene;
+    public SceneAsset gameWinScene;
+
+    //----------------------------------------------------------------------------------------
+
+    public void GameOver()
     {
-        StopGame();
-        UpdateHighScore();
-        blockGenerator.ClearBlocks();
-        defeatPanel.SetActive(true);
+        GameOverController.score = score;
+        GameOverController.highScore = UpdateHighScore();
+        SceneManager.LoadScene(gameOverScene.name);
     }
 
-    #endregion START/STOP
+    public void GameWin()
+    {
+        GameWinController.score = score;
+        SceneManager.LoadScene(gameWinScene.name);
+    }
+
+    #endregion OVER/WIN
 
     //----------------------------------------------------------------------------------------
 
@@ -95,7 +142,6 @@ public class GameController : MonoBehaviour
 
     [Header("Level")]
     public GameObject clearedPanel;
-    public GameObject defeatPanel;
     private int remainingBlocks;
     private int level = 1;
 
@@ -104,7 +150,6 @@ public class GameController : MonoBehaviour
     private void StartLevel()
     {
         clearedPanel.SetActive(false);
-        defeatPanel.SetActive(false);
 
         ball.Reset();
         paddle.Reset();
@@ -124,7 +169,8 @@ public class GameController : MonoBehaviour
     private void ClearLevel()
     {
         StopGame();
-        clearedPanel.SetActive(true);
+        if (score >= maxScore) Wait(2f, GameWin);
+        else clearedPanel.SetActive(true);
     }
 
     public void NextLevel()
@@ -144,6 +190,8 @@ public class GameController : MonoBehaviour
 
     private void Start()
     {
+        audioSource = GetComponent<AudioSource>();
+
         startText.SetText("PRESS ANY KEY TO START");
         scoreText.SetText(score.ToString());
         StartLevel();

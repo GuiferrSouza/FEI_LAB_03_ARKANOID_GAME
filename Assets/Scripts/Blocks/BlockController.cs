@@ -36,7 +36,7 @@ public class BlockController : MonoBehaviour
 
         // Break sound.
         // Uses PlayClipAtPoint because the block is destroyed immediately after breaking.
-        if (breakSound != null) AudioSource.PlayClipAtPoint(breakSound, transform.position, 1f);
+        if (breakSound != null) GameController.PlaySound(breakSound, 1f);
 
         Destroyed?.Invoke(points);
         Destroy(gameObject);

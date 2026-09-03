@@ -10,6 +10,7 @@ public class PaddleController : MonoBehaviour
 
     private Rigidbody2D rb;
     private SpriteRenderer spriteRenderer;
+    // Using a dedicated AudioSource for charging sound to avoid interrupting other sounds.
     private AudioSource audioSource;
     private Vector2 initialPosition;
 
@@ -108,7 +109,6 @@ public class PaddleController : MonoBehaviour
 
         rb.linearVelocity = Vector2.zero;
 
-        audioSource.clip = chargeSound;
         audioSource.Play();
 
         directionIndicator.gameObject.SetActive(true);
@@ -134,7 +134,6 @@ public class PaddleController : MonoBehaviour
     {
         var charge = Mathf.Clamp01(chargeTime / maxChargeTime);
         var speed = Mathf.Lerp(minLaunchSpeed, maxLaunchSpeed, charge);
-
         rb.linearVelocity = Vector2.right * chargeDirection * speed;
 
         isLaunched = true;
@@ -170,7 +169,7 @@ public class PaddleController : MonoBehaviour
         if (impactSpeed < minShakeImpact) return;
 
         cameraShake.Shake();
-        audioSource.PlayOneShot(wallCollisionSound);
+        GameController.PlaySound(wallCollisionSound);
         WallImpact?.Invoke();
     }
 
@@ -242,7 +241,7 @@ public class PaddleController : MonoBehaviour
     private void OnCollisionEnter2D(Collision2D collision)
     {
         if (collision.collider == leftWall || collision.collider == rightWall) ShakeCamera(collision.relativeVelocity.x);
-        else if (collision.gameObject == ball) audioSource.PlayOneShot(ballCollisionSound);
+        else if (collision.gameObject == ball) GameController.PlaySound(ballCollisionSound);
     }
 
     #endregion EVENTS

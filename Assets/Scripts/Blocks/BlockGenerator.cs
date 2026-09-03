@@ -2,8 +2,6 @@ using UnityEngine;
 
 public class BlockGenerator : MonoBehaviour
 {
-    #region GENERATION
-
     [Header("Walls")]
     public BoxCollider2D leftWall;
     public BoxCollider2D rightWall;
@@ -70,18 +68,4 @@ public class BlockGenerator : MonoBehaviour
 
         return generatedBlocks;
     }
-
-    //----------------------------------------------------------------------------------------
-
-    public void ClearBlocks()
-    {
-        for (var i = transform.childCount - 1; i >= 0; i--)
-        {
-            var block = transform.GetChild(i).gameObject;
-            block.SetActive(false);
-            Destroy(block);
-        }
-    }
-
-    #endregion GENERATION
 }
